@@ -24,8 +24,6 @@ taken from https://www.w3schools.com/colors/colors_xkcd.asp.
 
 """
 
-from __future__ import annotations
-
 from .core import ManimColor
 
 ACIDGREEN = ManimColor("#8FFE09")

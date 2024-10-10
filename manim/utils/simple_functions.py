@@ -10,7 +10,9 @@ __all__ = [
 ]
 
 
+import inspect
 from functools import lru_cache
+from types import MappingProxyType
 from typing import Callable
 
 import numpy as np

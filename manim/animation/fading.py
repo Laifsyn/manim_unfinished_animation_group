@@ -57,7 +57,10 @@ class _Fade(Transform):
     ) -> None:
         if not mobjects:
             raise ValueError("At least one mobject must be passed.")
-        mobject = mobjects[0] if len(mobjects) == 1 else Group(*mobjects)
+        if len(mobjects) == 1:
+            mobject = mobjects[0]
+        else:
+            mobject = Group(*mobjects)
 
         self.point_target = False
         if shift is None:
@@ -94,7 +97,7 @@ class _Fade(Transform):
 
 
 class FadeIn(_Fade):
-    r"""Fade in :class:`~.Mobject` s.
+    """Fade in :class:`~.Mobject` s.
 
     Parameters
     ----------
@@ -119,7 +122,7 @@ class FadeIn(_Fade):
                 dot = Dot(UP * 2 + LEFT)
                 self.add(dot)
                 tex = Tex(
-                    "FadeIn with ", "shift ", r" or target\_position", " and scale"
+                    "FadeIn with ", "shift ", " or target\\_position", " and scale"
                 ).scale(1)
                 animations = [
                     FadeIn(tex[0]),
@@ -142,7 +145,7 @@ class FadeIn(_Fade):
 
 
 class FadeOut(_Fade):
-    r"""Fade out :class:`~.Mobject` s.
+    """Fade out :class:`~.Mobject` s.
 
     Parameters
     ----------

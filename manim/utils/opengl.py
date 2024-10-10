@@ -31,7 +31,7 @@ def orthographic_projection_matrix(
     height=None,
     near=1,
     far=depth + 1,
-    format_=True,
+    format=True,
 ):
     if width is None:
         width = config["frame_width"]
@@ -45,15 +45,13 @@ def orthographic_projection_matrix(
             [0, 0, 0, 1],
         ],
     )
-    if format_:
+    if format:
         return matrix_to_shader_input(projection_matrix)
     else:
         return projection_matrix
 
 
-def perspective_projection_matrix(
-    width=None, height=None, near=2, far=50, format_=True
-):
+def perspective_projection_matrix(width=None, height=None, near=2, far=50, format=True):
     if width is None:
         width = config["frame_width"] / 6
     if height is None:

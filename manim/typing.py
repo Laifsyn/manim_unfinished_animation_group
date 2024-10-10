@@ -41,10 +41,6 @@ __all__ = [
     "RGBA_Tuple_Int",
     "HSV_Array_Float",
     "HSV_Tuple_Float",
-    "HSL_Array_Float",
-    "HSL_Tuple_Float",
-    "HSVA_Array_Float",
-    "HSVA_Tuple_Float",
     "ManimColorInternal",
     "PointDType",
     "InternalPoint2D",
@@ -81,10 +77,10 @@ __all__ = [
     "FunctionOverride",
     "PathFuncType",
     "MappingFunction",
-    "PixelArray",
-    "GrayscalePixelArray",
-    "RGBPixelArray",
-    "RGBAPixelArray",
+    "Image",
+    "GrayscaleImage",
+    "RGBImage",
+    "RGBAImage",
     "StrPath",
     "StrOrBytesPath",
 ]
@@ -217,46 +213,6 @@ HSB) format.
 
 Its components describe, in order, the Hue, Saturation and Value (or
 Brightness) in the represented color.
-"""
-
-HSVA_Array_Float: TypeAlias = RGBA_Array_Float
-"""``shape: (4,)``
-
-A :class:`numpy.ndarray` of 4 floats between 0 and 1, representing a
-color in HSVA (or HSBA) format.
-
-Its components describe, in order, the Hue, Saturation and Value (or
-Brightness) in the represented color.
-"""
-
-HSVA_Tuple_Float: TypeAlias = RGBA_Tuple_Float
-"""``shape: (4,)``
-
-A tuple of 4 floats between 0 and 1, representing a color in HSVA (or
-HSBA) format.
-
-Its components describe, in order, the Hue, Saturation and Value (or
-Brightness) in the represented color.
-"""
-
-HSL_Array_Float: TypeAlias = RGB_Array_Float
-"""``shape: (3,)``
-
-A :class:`numpy.ndarray` of 3 floats between 0 and 1, representing a
-color in HSL format.
-
-Its components describe, in order, the Hue, Saturation and Lightness
-in the represented color.
-"""
-
-HSL_Tuple_Float: TypeAlias = RGB_Tuple_Float
-"""``shape: (3,)``
-
-A :class:`numpy.ndarray` of 3 floats between 0 and 1, representing a
-color in HSL format.
-
-Its components describe, in order, the Hue, Saturation and Lightness
-in the represented color.
 """
 
 ManimColorInternal: TypeAlias = RGBA_Array_Float
@@ -626,7 +582,7 @@ MappingFunction: TypeAlias = Callable[[Point3D], Point3D]
 Image types
 """
 
-PixelArray: TypeAlias = npt.NDArray[ManimInt]
+Image: TypeAlias = npt.NDArray[ManimInt]
 """``shape: (height, width) | (height, width, 3) | (height, width, 4)``
 
 A rasterized image with a height of ``height`` pixels and a width of
@@ -639,24 +595,24 @@ lightness (for greyscale images), an `RGB_Array_Int` or an
 `RGBA_Array_Int`.
 """
 
-GrayscalePixelArray: TypeAlias = PixelArray
+GrayscaleImage: TypeAlias = Image
 """``shape: (height, width)``
 
-A 100% opaque grayscale `PixelArray`, where every pixel value is a
+A 100% opaque grayscale `Image`, where every pixel value is a
 `ManimInt` indicating its lightness (black -> gray -> white).
 """
 
-RGBPixelArray: TypeAlias = PixelArray
+RGBImage: TypeAlias = Image
 """``shape: (height, width, 3)``
 
-A 100% opaque `PixelArray` in color, where every pixel value is an
+A 100% opaque `Image` in color, where every pixel value is an
 `RGB_Array_Int` object.
 """
 
-RGBAPixelArray: TypeAlias = PixelArray
+RGBAImage: TypeAlias = Image
 """``shape: (height, width, 4)``
 
-A `PixelArray` in color where pixels can be transparent. Every pixel
+An `Image` in color where pixels can be transparent. Every pixel
 value is an `RGBA_Array_Int` object.
 """
 

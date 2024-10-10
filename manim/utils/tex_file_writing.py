@@ -12,8 +12,8 @@ import hashlib
 import os
 import re
 import unicodedata
-from collections.abc import Iterable
 from pathlib import Path
+from typing import Iterable
 
 from manim.utils.tex import TexTemplate
 
@@ -35,7 +35,7 @@ def tex_to_svg_file(
     environment: str | None = None,
     tex_template: TexTemplate | None = None,
 ):
-    r"""Takes a tex expression and returns the svg version of the compiled tex
+    """Takes a tex expression and returns the svg version of the compiled tex
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def generate_tex_file(
     environment: str | None = None,
     tex_template: TexTemplate | None = None,
 ) -> Path:
-    r"""Takes a tex expression (and an optional tex environment),
+    """Takes a tex expression (and an optional tex environment),
     and returns a fully formed tex file ready for compilation.
 
     Parameters
@@ -271,6 +271,7 @@ def delete_nonsvg_files(additional_endings: Iterable[str] = ()) -> None:
     additional_endings
         Additional endings to whitelist
     """
+
     tex_dir = config.get_dir("tex_dir")
     file_suffix_whitelist = {".svg", ".tex", *additional_endings}
 

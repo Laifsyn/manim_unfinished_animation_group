@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import inspect
 import re
 import textwrap
@@ -383,8 +382,10 @@ class Shader:
             shader_program_cache[self.name] = self.shader_program
 
     def set_uniform(self, name, value):
-        with contextlib.suppress(KeyError):
+        try:
             self.shader_program[name] = value
+        except KeyError:
+            pass
 
 
 class FullScreenQuad(Mesh):

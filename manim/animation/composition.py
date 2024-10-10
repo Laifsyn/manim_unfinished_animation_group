@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import types
-from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence
 
 import numpy as np
 
@@ -67,7 +66,7 @@ class AnimationGroup(Animation):
         self.group = group
         if self.group is None:
             mobjects = remove_list_redundancies(
-                [anim.mobject for anim in self.animations if not anim.is_introducer()],
+                [anim.mobject for anim in self.animations],
             )
             if config["renderer"] == RendererType.OPENGL:
                 self.group = OpenGLGroup(*mobjects)
@@ -82,31 +81,48 @@ class AnimationGroup(Animation):
         return list(self.group)
 
     def begin(self) -> None:
+        import os, inspect
+
+        print(
+            f"Entering AnimationGroup(Animation)::begin(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
+
         if not self.animations:
             raise ValueError(
                 f"Trying to play {self} without animations, this is not supported. "
                 "Please add at least one subanimation."
             )
-
         self.anim_group_time = 0.0
         if self.suspend_mobject_updating:
             self.group.suspend_updating()
         for anim in self.animations:
             anim.begin()
-        else:
-            for anim in self.animations:
-                anim.finish()
+        print(
+            f"Exiting AnimationGroup(Animation)::begin(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
     def _setup_scene(self, scene) -> None:
         for anim in self.animations:
             anim._setup_scene(scene)
 
     def finish(self) -> None:
+        import os, inspect
+
+        print(
+            f"Entering AnimationGroup(Animation)::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         self.interpolate(1)
         self.anims_begun[:] = True
         self.anims_finished[:] = True
+        super().finish()
         if self.suspend_mobject_updating:
+            # for anim in self.animations:
+            #     anim.finish()
             self.group.resume_updating()
+
+        print(
+            f"Exiting AnimationGroup(Animation)::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
     def clean_up_from_scene(self, scene: Scene) -> None:
         self._on_finish(scene)
@@ -233,11 +249,7 @@ class Succession(AnimationGroup):
         super().__init__(*animations, lag_ratio=lag_ratio, **kwargs)
 
     def begin(self) -> None:
-        if not self.animations:
-            raise ValueError(
-                f"Trying to play {self} without animations, this is not supported. "
-                "Please add at least one subanimation."
-            )
+        assert len(self.animations) > 0
         self.update_active_animation(0)
 
     def finish(self) -> None:

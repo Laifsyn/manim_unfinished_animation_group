@@ -6,7 +6,7 @@ __all__ = ["ThreeDScene", "SpecialThreeDScene"]
 
 
 import warnings
-from collections.abc import Iterable, Sequence
+from typing import Iterable, Sequence
 
 import numpy as np
 
@@ -86,6 +86,7 @@ class ThreeDScene(Scene):
             The new center of the camera frame in cartesian coordinates.
 
         """
+
         if phi is not None:
             self.renderer.camera.set_phi(phi)
         if theta is not None:
@@ -134,11 +135,13 @@ class ThreeDScene(Scene):
                 }
                 cam.add_updater(lambda m, dt: methods[about](rate * dt))
                 self.add(self.camera)
-        except Exception as e:
-            raise ValueError("Invalid ambient rotation angle.") from e
+        except Exception:
+            raise ValueError("Invalid ambient rotation angle.")
 
     def stop_ambient_camera_rotation(self, about="theta"):
-        """This method stops all ambient camera rotation."""
+        """
+        This method stops all ambient camera rotation.
+        """
         about: str = about.lower()
         try:
             if config.renderer == RendererType.CAIRO:
@@ -152,8 +155,8 @@ class ThreeDScene(Scene):
                 self.remove(x)
             elif config.renderer == RendererType.OPENGL:
                 self.camera.clear_updaters()
-        except Exception as e:
-            raise ValueError("Invalid ambient rotation angle.") from e
+        except Exception:
+            raise ValueError("Invalid ambient rotation angle.")
 
     def begin_3dillusion_camera_rotation(
         self,
@@ -202,7 +205,9 @@ class ThreeDScene(Scene):
         self.add(self.renderer.camera.phi_tracker)
 
     def stop_3dillusion_camera_rotation(self):
-        """This method stops all illusion camera rotations."""
+        """
+        This method stops all illusion camera rotations.
+        """
         self.renderer.camera.theta_tracker.clear_updaters()
         self.remove(self.renderer.camera.theta_tracker)
         self.renderer.camera.phi_tracker.clear_updaters()
@@ -540,5 +545,7 @@ class SpecialThreeDScene(ThreeDScene):
         return self.default_angled_camera_position
 
     def set_camera_to_default_position(self):
-        """Sets the camera to its default position."""
+        """
+        Sets the camera to its default position.
+        """
         self.set_camera_orientation(**self.default_angled_camera_position)

@@ -14,10 +14,9 @@ import random
 import sys
 import types
 import warnings
-from collections.abc import Iterable
 from functools import partialmethod, reduce
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Literal
+from typing import TYPE_CHECKING, Callable, Iterable, Literal
 
 import numpy as np
 
@@ -44,11 +43,11 @@ if TYPE_CHECKING:
 
     from manim.typing import (
         FunctionOverride,
+        Image,
         ManimFloat,
         ManimInt,
         MappingFunction,
         PathFuncType,
-        PixelArray,
         Point3D,
         Point3D_Array,
         Vector3D,
@@ -115,63 +114,6 @@ class Mobject:
         self.reset_points()
         self.generate_points()
         self.init_colors()
-
-    def _assert_valid_submobjects(self, submobjects: Iterable[Mobject]) -> Self:
-        """Check that all submobjects are actually instances of
-        :class:`Mobject`, and that none of them is ``self`` (a
-        :class:`Mobject` cannot contain itself).
-
-        This is an auxiliary function called when adding Mobjects to the
-        :attr:`submobjects` list.
-
-        This function is intended to be overridden by subclasses such as
-        :class:`VMobject`, which should assert that only other VMobjects
-        may be added into it.
-
-        Parameters
-        ----------
-        submobjects
-            The list containing values to validate.
-
-        Returns
-        -------
-        :class:`Mobject`
-            The Mobject itself.
-
-        Raises
-        ------
-        TypeError
-            If any of the values in `submobjects` is not a :class:`Mobject`.
-        ValueError
-            If there was an attempt to add a :class:`Mobject` as its own
-            submobject.
-        """
-        return self._assert_valid_submobjects_internal(submobjects, Mobject)
-
-    def _assert_valid_submobjects_internal(
-        self, submobjects: list[Mobject], mob_class: type[Mobject]
-    ) -> Self:
-        for i, submob in enumerate(submobjects):
-            if not isinstance(submob, mob_class):
-                error_message = (
-                    f"Only values of type {mob_class.__name__} can be added "
-                    f"as submobjects of {type(self).__name__}, but the value "
-                    f"{submob} (at index {i}) is of type "
-                    f"{type(submob).__name__}."
-                )
-                # Intended for subclasses such as VMobject, which
-                # cannot have regular Mobjects as submobjects
-                if isinstance(submob, Mobject):
-                    error_message += (
-                        " You can try adding this value into a Group instead."
-                    )
-                raise TypeError(error_message)
-            if submob is self:
-                raise ValueError(
-                    f"Cannot add {type(self).__name__} as a submobject of "
-                    f"itself (at index {i})."
-                )
-        return self
 
     @classmethod
     def animation_override_for(
@@ -471,19 +413,12 @@ class Mobject:
             >>> len(outer.submobjects)
             1
 
-        Only Mobjects can be added::
-
-            >>> outer.add(3)
-            Traceback (most recent call last):
-            ...
-            TypeError: Only values of type Mobject can be added as submobjects of Mobject, but the value 3 (at index 0) is of type int.
-
         Adding an object to itself raises an error::
 
             >>> outer.add(outer)
             Traceback (most recent call last):
             ...
-            ValueError: Cannot add Mobject as a submobject of itself (at index 0).
+            ValueError: Mobject cannot contain self
 
         A given mobject cannot be added as a submobject
         twice to some parent::
@@ -497,7 +432,12 @@ class Mobject:
             [child]
 
         """
-        self._assert_valid_submobjects(mobjects)
+        for m in mobjects:
+            if not isinstance(m, Mobject):
+                raise TypeError("All submobjects must be of type Mobject")
+            if m is self:
+                raise ValueError("Mobject cannot contain self")
+
         unique_mobjects = remove_list_redundancies(mobjects)
         if len(mobjects) != len(unique_mobjects):
             logger.warning(
@@ -523,7 +463,10 @@ class Mobject:
         mobject
             The mobject to be inserted.
         """
-        self._assert_valid_submobjects([mobject])
+        if not isinstance(mobject, Mobject):
+            raise TypeError("All submobjects must be of type Mobject")
+        if mobject is self:
+            raise ValueError("Mobject cannot contain self")
         self.submobjects.insert(index, mobject)
 
     def __add__(self, mobject: Mobject):
@@ -576,7 +519,13 @@ class Mobject:
         :meth:`add`
 
         """
-        self._assert_valid_submobjects(mobjects)
+        if self in mobjects:
+            raise ValueError("A mobject shouldn't contain itself")
+
+        for mobject in mobjects:
+            if not isinstance(mobject, Mobject):
+                raise TypeError("All submobjects must be of type Mobject")
+
         self.remove(*mobjects)
         # dict.fromkeys() removes duplicates while maintaining order
         self.submobjects = list(dict.fromkeys(mobjects)) + self.submobjects
@@ -666,6 +615,7 @@ class Mobject:
             >>> mob.foo
             0
         """
+
         for attr, value in kwargs.items():
             setattr(self, attr, value)
 
@@ -747,6 +697,7 @@ class Mobject:
         :meth:`length_over_dim`
 
         """
+
         # Get the length across the X dimension
         return self.length_over_dim(0)
 
@@ -783,6 +734,7 @@ class Mobject:
         :meth:`length_over_dim`
 
         """
+
         # Get the length across the Y dimension
         return self.length_over_dim(1)
 
@@ -803,6 +755,7 @@ class Mobject:
         :meth:`length_over_dim`
 
         """
+
         # Get the length across the Z dimension
         return self.length_over_dim(2)
 
@@ -821,7 +774,7 @@ class Mobject:
 
     # Displaying
 
-    def get_image(self, camera=None) -> PixelArray:
+    def get_image(self, camera=None) -> Image:
         if camera is None:
             from ..camera.camera import Camera
 
@@ -834,8 +787,7 @@ class Mobject:
 
     def save_image(self, name: str | None = None) -> None:
         """Saves an image of only this :class:`Mobject` at its position to a png
-        file.
-        """
+        file."""
         self.get_image().save(
             Path(config.get_dir("video_dir")).joinpath((name or str(self)) + ".png"),
         )
@@ -1026,6 +978,7 @@ class Mobject:
         :meth:`remove_updater`
         :class:`~.UpdateFromFunc`
         """
+
         if index is None:
             self.updaters.append(update_function)
         else:
@@ -1115,6 +1068,7 @@ class Mobject:
         :meth:`clear_updaters`
 
         """
+
         self.clear_updaters()
         for updater in mobject.get_updaters():
             self.add_updater(updater)
@@ -1140,6 +1094,7 @@ class Mobject:
         :meth:`add_updater`
 
         """
+
         self.updating_suspended = True
         if recursive:
             for submob in self.submobjects:
@@ -1165,11 +1120,19 @@ class Mobject:
         :meth:`add_updater`
 
         """
+        import os,inspect
+        print(
+            f"         Entering MObject::resume_uodating(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         self.updating_suspended = False
         if recursive:
             for submob in self.submobjects:
                 submob.resume_updating(recursive)
         self.update(dt=0, recursive=recursive)
+        
+        print(
+            f"         Exiting MObject::resume_uodating(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         return self
 
     # Transforming operations
@@ -1214,6 +1177,7 @@ class Mobject:
         --------
         :meth:`move_to`
         """
+
         total_vector = reduce(op.add, vectors)
         for mob in self.family_members_with_points():
             mob.points = mob.points.astype("float")
@@ -1572,7 +1536,9 @@ class Mobject:
             return True
         if self.get_bottom()[1] > config["frame_y_radius"]:
             return True
-        return self.get_top()[1] < -config["frame_y_radius"]
+        if self.get_top()[1] < -config["frame_y_radius"]:
+            return True
+        return False
 
     def stretch_about_point(self, factor: float, dim: int, point: Point3D) -> Self:
         return self.stretch(factor, dim, about_point=point)
@@ -1612,6 +1578,7 @@ class Mobject:
             >>> sq.height
             5.0
         """
+
         return self.rescale_to_fit(width, 0, stretch=False, **kwargs)
 
     def stretch_to_fit_width(self, width: float, **kwargs) -> Self:
@@ -1637,6 +1604,7 @@ class Mobject:
             >>> sq.height
             2.0
         """
+
         return self.rescale_to_fit(width, 0, stretch=True, **kwargs)
 
     def scale_to_fit_height(self, height: float, **kwargs) -> Self:
@@ -1662,6 +1630,7 @@ class Mobject:
             >>> sq.width
             5.0
         """
+
         return self.rescale_to_fit(height, 1, stretch=False, **kwargs)
 
     def stretch_to_fit_height(self, height: float, **kwargs) -> Self:
@@ -1687,14 +1656,17 @@ class Mobject:
             >>> sq.width
             2.0
         """
+
         return self.rescale_to_fit(height, 1, stretch=True, **kwargs)
 
     def scale_to_fit_depth(self, depth: float, **kwargs) -> Self:
         """Scales the :class:`~.Mobject` to fit a depth while keeping width/height proportional."""
+
         return self.rescale_to_fit(depth, 2, stretch=False, **kwargs)
 
     def stretch_to_fit_depth(self, depth: float, **kwargs) -> Self:
         """Stretches the :class:`~.Mobject` to fit a depth, not keeping width/height proportional."""
+
         return self.rescale_to_fit(depth, 2, stretch=True, **kwargs)
 
     def set_coord(self, value, dim: int, direction: Vector3D = ORIGIN) -> Self:
@@ -1821,6 +1793,7 @@ class Mobject:
         :class:`~.BackgroundRectangle`
 
         """
+
         # TODO, this does not behave well when the mobject has points,
         # since it gets displayed on top
         from manim.mobject.geometry.shape_matchers import BackgroundRectangle
@@ -1972,15 +1945,14 @@ class Mobject:
 
     def reduce_across_dimension(self, reduce_func: Callable, dim: int):
         """Find the min or max value from a dimension across all points in this and submobjects."""
-        assert dim >= 0
-        assert dim <= 2
+        assert dim >= 0 and dim <= 2
         if len(self.submobjects) == 0 and len(self.points) == 0:
             # If we have no points and no submobjects, return 0 (e.g. center)
             return 0
 
         # If we do not have points (but do have submobjects)
         # use only the points from those.
-        if len(self.points) == 0:  # noqa: SIM108
+        if len(self.points) == 0:
             rv = None
         else:
             # Otherwise, be sure to include our own points
@@ -1989,7 +1961,10 @@ class Mobject:
         # smallest dimension they have and compare it to the return value.
         for mobj in self.submobjects:
             value = mobj.reduce_across_dimension(reduce_func, dim)
-            rv = value if rv is None else reduce_func([value, rv])
+            if rv is None:
+                rv = value
+            else:
+                rv = reduce_func([value, rv])
         return rv
 
     def nonempty_submobjects(self) -> list[Self]:
@@ -2046,7 +2021,7 @@ class Mobject:
 
         ::
 
-            sample = Arc(start_angle=PI / 7, angle=PI / 5)
+            sample = Arc(start_angle=PI/7, angle = PI/5)
 
             # These are all equivalent
             max_y_1 = sample.get_top()[1]
@@ -2470,10 +2445,10 @@ class Mobject:
             buff_x = buff_y = buff
 
         # Initialize alignments correctly
-        def init_alignments(alignments, num, mapping, name, dir_):
+        def init_alignments(alignments, num, mapping, name, dir):
             if alignments is None:
                 # Use cell_alignment as fallback
-                return [cell_alignment * dir_] * num
+                return [cell_alignment * dir] * num
             if len(alignments) != num:
                 raise ValueError(f"{name}_alignments has a mismatching size.")
             alignments = list(alignments)

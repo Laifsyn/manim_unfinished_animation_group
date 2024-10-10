@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from types import GeneratorType
-from typing import TypeVar
+from typing import Iterable, TypeVar
 
 T = TypeVar("T")
 

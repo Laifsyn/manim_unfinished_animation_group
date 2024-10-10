@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 class Line(TipableVMobject):
     def __init__(
         self,
-        start: Point3D | Mobject = LEFT,
-        end: Point3D | Mobject = RIGHT,
+        start: Point3D = LEFT,
+        end: Point3D = RIGHT,
         buff: float = 0,
         path_arc: float | None = None,
         **kwargs,
@@ -63,32 +63,16 @@ class Line(TipableVMobject):
 
     def set_points_by_ends(
         self,
-        start: Point3D | Mobject,
-        end: Point3D | Mobject,
+        start: Point3D,
+        end: Point3D,
         buff: float = 0,
         path_arc: float = 0,
     ) -> None:
-        """Sets the points of the line based on its start and end points.
-        Unlike :meth:`put_start_and_end_on`, this method respects `self.buff` and
-        Mobject bounding boxes.
-
-        Parameters
-        ----------
-        start
-            The start point or Mobject of the line.
-        end
-            The end point or Mobject of the line.
-        buff
-            The empty space between the start and end of the line, by default 0.
-        path_arc
-            The angle of a circle spanned by this arc, by default 0 which is a straight line.
-        """
-        self._set_start_and_end_attrs(start, end)
         if path_arc:
             arc = ArcBetweenPoints(self.start, self.end, angle=self.path_arc)
             self.set_points(arc.points)
         else:
-            self.set_points_as_corners([self.start, self.end])
+            self.set_points_as_corners([start, end])
 
         self._account_for_buff(buff)
 
@@ -98,7 +82,10 @@ class Line(TipableVMobject):
         if buff == 0:
             return
         #
-        length = self.get_length() if self.path_arc == 0 else self.get_arc_length()
+        if self.path_arc == 0:
+            length = self.get_length()
+        else:
+            length = self.get_arc_length()
         #
         if length < 2 * buff:
             return
@@ -106,9 +93,7 @@ class Line(TipableVMobject):
         self.pointwise_become_partial(self, buff_proportion, 1 - buff_proportion)
         return self
 
-    def _set_start_and_end_attrs(
-        self, start: Point3D | Mobject, end: Point3D | Mobject
-    ) -> None:
+    def _set_start_and_end_attrs(self, start: Point3D, end: Point3D) -> None:
         # If either start or end are Mobjects, this
         # gives their centers
         rough_start = self._pointify(start)
@@ -196,6 +181,7 @@ class Line(TipableVMobject):
         point
             The point to which the line is projected.
         """
+
         start = self.get_start()
         end = self.get_end()
         unit_vect = normalize(end - start)
@@ -281,6 +267,7 @@ class DashedLine(Line):
             >>> DashedLine()._calculate_num_dashes()
             20
         """
+
         # Minimum number of dashes has to be 2
         return max(
             2,
@@ -297,6 +284,7 @@ class DashedLine(Line):
             >>> DashedLine().get_start()
             array([-1.,  0.,  0.])
         """
+
         if len(self.submobjects) > 0:
             return self.submobjects[0].get_start()
         else:
@@ -312,6 +300,7 @@ class DashedLine(Line):
             >>> DashedLine().get_end()
             array([1., 0., 0.])
         """
+
         if len(self.submobjects) > 0:
             return self.submobjects[-1].get_end()
         else:
@@ -327,6 +316,7 @@ class DashedLine(Line):
             >>> DashedLine().get_first_handle()
             array([-0.98333333,  0.        ,  0.        ])
         """
+
         return self.submobjects[0].points[1]
 
     def get_last_handle(self) -> Point3D:
@@ -339,6 +329,7 @@ class DashedLine(Line):
             >>> DashedLine().get_last_handle()
             array([0.98333333, 0.        , 0.        ])
         """
+
         return self.submobjects[-1].points[-2]
 
 
@@ -599,6 +590,7 @@ class Arrow(Line):
             >>> np.round(Arrow().get_normal_vector()) + 0. # add 0. to avoid negative 0 in output
             array([ 0.,  0., -1.])
         """
+
         p0, p1, p2 = self.tip.get_start_anchors()[:3]
         return normalize(np.cross(p2 - p1, p1 - p0))
 
@@ -618,6 +610,7 @@ class Arrow(Line):
             >>> Arrow().get_default_tip_length()
             0.35
         """
+
         max_ratio = self.max_tip_length_to_length_ratio
         return min(self.tip_length, max_ratio * self.get_length())
 
@@ -717,6 +710,7 @@ class Vector(Arrow):
 
                     self.add(plane, vec_1, vec_2, label_1, label_2)
         """
+
         # avoiding circular imports
         from ..matrix import Matrix
 
@@ -1016,10 +1010,11 @@ class Angle(VMobject, metaclass=ConvertToOpenGL):
             >>> angle.get_lines()
             VGroup(Line, Line)
         """
+
         return VGroup(*self.lines)
 
     def get_value(self, degrees: bool = False) -> float:
-        r"""Get the value of an angle of the :class:`Angle` class.
+        """Get the value of an angle of the :class:`Angle` class.
 
         Parameters
         ----------
@@ -1049,11 +1044,12 @@ class Angle(VMobject, metaclass=ConvertToOpenGL):
 
                     self.add(line1, line2, angle, value)
         """
+
         return self.angle_value / DEGREES if degrees else self.angle_value
 
     @staticmethod
     def from_three_points(A: Point3D, B: Point3D, C: Point3D, **kwargs) -> Angle:
-        r"""The angle between the lines AB and BC.
+        """The angle between the lines AB and BC.
 
         This constructs the angle :math:`\\angle ABC`.
 

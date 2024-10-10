@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Iterable
 
 import numpy as np
 
@@ -90,6 +89,7 @@ class LinearBase(_ScaleBase):
         scale_factor
             The slope of the linear function, by default 1.0
         """
+
         super().__init__()
         self.scale_factor = scale_factor
 
@@ -145,9 +145,7 @@ class LogBase(_ScaleBase):
         """Inverse of ``function``. The value must be greater than 0"""
         if isinstance(value, np.ndarray):
             condition = value.any() <= 0
-
-            def func(value, base):
-                return np.log(value) / np.log(base)
+            func = lambda value, base: np.log(value) / np.log(base)
         else:
             condition = value <= 0
             func = math.log
@@ -176,11 +174,12 @@ class LogBase(_ScaleBase):
         base_config
             Additional arguments to be passed to :class:`~.Integer`.
         """
+
         # uses `format` syntax to control the number of decimal places.
         tex_labels = [
             Integer(
                 self.base,
-                unit="^{%s}" % (f"{self.inverse_function(i):.{unit_decimal_places}f}"),  # noqa: UP031
+                unit="^{%s}" % (f"{self.inverse_function(i):.{unit_decimal_places}f}"),
                 **base_config,
             )
             for i in val_range

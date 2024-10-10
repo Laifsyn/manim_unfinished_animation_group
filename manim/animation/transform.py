@@ -28,8 +28,7 @@ __all__ = [
 
 import inspect
 import types
-from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence
 
 import numpy as np
 
@@ -191,6 +190,11 @@ class Transform(Animation):
             self._path_func = path_func
 
     def begin(self) -> None:
+        import os, inspect
+
+        print(
+            f"   Entering Transform(Animation)::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         # Use a copy of target_mobject for the align_data
         # call so that the actual target_mobject stays
         # preserved.
@@ -202,7 +206,12 @@ class Transform(Animation):
             self.mobject.align_data_and_family(self.target_copy)
         else:
             self.mobject.align_data(self.target_copy)
+        print("   calling Transform(Animation)::super::begin()")
         super().begin()
+        print("   returning from Transform(Animation)::super::begin()")
+        print(
+            f"   Exitting Transform(Animation)::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
     def create_target(self) -> Mobject:
         # Has no meaningful effect here, but may be useful
@@ -298,7 +307,9 @@ class ReplacementTransform(Transform):
 
 
 class TransformFromCopy(Transform):
-    """Performs a reversed Transform"""
+    """
+    Performs a reversed Transform
+    """
 
     def __init__(self, mobject: Mobject, target_mobject: Mobject, **kwargs) -> None:
         super().__init__(target_mobject, mobject, **kwargs)
@@ -439,9 +450,18 @@ class _MethodAnimation(MoveToTarget):
         super().__init__(mobject)
 
     def finish(self) -> None:
+
+        import os, inspect
+
+        print(
+            f"   Entering _MethodAnmation(MoveToTarget)::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         for method, method_args, method_kwargs in self.methods:
             method.__func__(self.mobject, *method_args, **method_kwargs)
         super().finish()
+        print(
+            f"   Exitting _MethodAnmation(MoveToTarget)::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
 
 class ApplyMethod(Transform):

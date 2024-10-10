@@ -15,8 +15,7 @@ from ..utils.iterables import list_update
 
 if typing.TYPE_CHECKING:
     import types
-    from collections.abc import Iterable
-    from typing import Any
+    from typing import Any, Iterable
 
     from manim.animation.animation import Animation
     from manim.scene.scene import Scene
@@ -63,6 +62,10 @@ class CairoRenderer:
         *args: Animation | Iterable[Animation] | types.GeneratorType[Animation],
         **kwargs,
     ):
+        import os, inspect
+        print(
+            f" >>Entering CairoRenderer::play(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         # Reset skip_animations to the original state.
         # Needed when rendering only some animations, and skipping others.
         self.skip_animations = self._original_skipping_status
@@ -116,6 +119,9 @@ class CairoRenderer:
         self.file_writer.end_animation(not self.skip_animations)
 
         self.num_plays += 1
+        print(
+            f" >>Exitting CairoRenderer::play(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
     def update_frame(  # TODO Description in Docstring
         self,
@@ -187,7 +193,8 @@ class CairoRenderer:
         if self.skip_animations:
             return
         self.time += num_frames * dt
-        self.file_writer.write_frame(frame, num_frames=num_frames)
+        for _ in range(num_frames):
+            self.file_writer.write_frame(frame)
 
     def freeze_current_frame(self, duration: float):
         """Adds a static frame to the movie for a given duration. The static frame is the current frame.

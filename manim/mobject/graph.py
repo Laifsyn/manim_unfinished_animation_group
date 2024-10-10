@@ -8,9 +8,8 @@ __all__ = [
 ]
 
 import itertools as it
-from collections.abc import Hashable, Iterable
 from copy import copy
-from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
+from typing import TYPE_CHECKING, Any, Hashable, Iterable, Literal, Protocol, cast
 
 import networkx as nx
 import numpy as np
@@ -18,7 +17,6 @@ import numpy as np
 if TYPE_CHECKING:
     from typing_extensions import TypeAlias
 
-    from manim.scene.scene import Scene
     from manim.typing import Point3D
 
     NxGraph: TypeAlias = nx.classes.graph.Graph | nx.classes.digraph.DiGraph
@@ -338,7 +336,10 @@ def _tree_layout(
     parent = {u: root_vertex for u in children[root_vertex]}
     pos = {}
     obstruction = [0.0] * len(T)
-    o = -1 if orientation == "down" else 1
+    if orientation == "down":
+        o = -1
+    else:
+        o = 1
 
     def slide(v, dx):
         """
@@ -401,9 +402,15 @@ def _tree_layout(
         if isinstance(scale, (float, int)) and (width > 0 or height > 0):
             sf = 2 * scale / max(width, height)
         elif isinstance(scale, tuple):
-            sw = 2 * scale[0] / width if scale[0] is not None and width > 0 else 1
+            if scale[0] is not None and width > 0:
+                sw = 2 * scale[0] / width
+            else:
+                sw = 1
 
-            sh = 2 * scale[1] / height if scale[1] is not None and height > 0 else 1
+            if scale[1] is not None and height > 0:
+                sh = 2 * scale[1] / height
+            else:
+                sh = 1
 
             sf = np.array([sw, sh, 0])
         else:
@@ -473,7 +480,7 @@ def _determine_graph_layout(
             raise ValueError(
                 f"The layout '{layout}' is neither a recognized layout, a layout function,"
                 "nor a vertex placement dictionary.",
-            ) from e
+            )
 
 
 class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
@@ -552,7 +559,6 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
         all other configuration options for a vertex.
     edge_type
         The mobject class used for displaying edges in the scene.
-        Must be a subclass of :class:`~.Line` for default updaters to work.
     edge_config
         Either a dictionary containing keyword arguments to be passed
         to the class specified via ``edge_type``, or a dictionary whose
@@ -817,7 +823,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
             labels = {v: labels for v in vertices}
         else:
             assert isinstance(labels, dict)
-            base_labels = dict.fromkeys(vertices, False)
+            base_labels = {v: False for v in vertices}
             base_labels.update(labels)
             labels = base_labels
 
@@ -842,7 +848,7 @@ class GenericGraph(VMobject, metaclass=ConvertToOpenGL):
                 label_fill_color=label_fill_color,
                 vertex_type=vertex_type,
                 vertex_config=vertex_config[v],
-                vertex_mobject=vertex_mobjects.get(v),
+                vertex_mobject=vertex_mobjects[v] if v in vertex_mobjects else None,
             )
             for v in vertices
         ]
@@ -1506,8 +1512,7 @@ class Graph(GenericGraph):
                     *new_edges,
                     vertex_config=self.VERTEX_CONF,
                     positions={
-                        k: g.vertices[vertex_id].get_center() + 0.1 * DOWN
-                        for k in new_vertices
+                        k: g.vertices[vertex_id].get_center() + 0.1 * DOWN for k in new_vertices
                     },
                 )
                 if depth < self.DEPTH:
@@ -1551,12 +1556,7 @@ class Graph(GenericGraph):
     def update_edges(self, graph):
         for (u, v), edge in graph.edges.items():
             # Undirected graph has a Line edge
-            edge.set_points_by_ends(
-                graph[u].get_center(),
-                graph[v].get_center(),
-                buff=self._edge_config.get("buff", 0),
-                path_arc=self._edge_config.get("path_arc", 0),
-            )
+            edge.put_start_and_end_on(graph[u].get_center(), graph[v].get_center())
 
     def __repr__(self: Graph) -> str:
         return f"Undirected graph on {len(self.vertices)} vertices and {len(self.edges)} edges"
@@ -1765,15 +1765,10 @@ class DiGraph(GenericGraph):
         deformed.
         """
         for (u, v), edge in graph.edges.items():
+            edge_type = type(edge)
             tip = edge.pop_tips()[0]
-            # Passing the Mobject instead of the vertex makes the tip
-            # stop on the bounding box of the vertex.
-            edge.set_points_by_ends(
-                graph[u],
-                graph[v],
-                buff=self._edge_config.get("buff", 0),
-                path_arc=self._edge_config.get("path_arc", 0),
-            )
+            new_edge = edge_type(self[u], self[v], **self._edge_config[(u, v)])
+            edge.become(new_edge)
             edge.add_tip(tip)
 
     def __repr__(self: DiGraph) -> str:

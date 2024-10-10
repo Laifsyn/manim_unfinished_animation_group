@@ -8,9 +8,8 @@ import copy
 import itertools as it
 import operator as op
 import pathlib
-from collections.abc import Iterable
 from functools import reduce
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 import cairo
 import numpy as np
@@ -377,6 +376,7 @@ class Camera:
         np.array
             The pixel array which can then be passed to set_background.
         """
+
         logger.info("Starting set_background")
         coords = self.get_coords_of_all_pixels()
         new_background = np.apply_along_axis(coords_to_colors_func, 2, coords)

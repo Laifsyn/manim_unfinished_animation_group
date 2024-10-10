@@ -14,10 +14,8 @@ from ..utils.rate_functions import linear, smooth
 __all__ = ["Animation", "Wait", "override_animation"]
 
 
-from collections.abc import Iterable, Sequence
 from copy import deepcopy
-from functools import partialmethod
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence
 
 from typing_extensions import Self
 
@@ -194,6 +192,16 @@ class Animation:
         method.
 
         """
+        import os, inspect
+
+        print(
+            f"      Entering Animation::begin(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
+        if self.run_time <= 0:
+            raise ValueError(
+                f"{self} has a run_time of <= 0 seconds, this cannot be rendered correctly. "
+                "Please set the run_time to be positive"
+            )
         self.starting_mobject = self.create_starting_mobject()
         if self.suspend_mobject_updating:
             # All calls to self.mobject's internal updaters
@@ -204,6 +212,9 @@ class Animation:
             # or any others among self.get_all_mobjects()
             self.mobject.suspend_updating()
         self.interpolate(0)
+        print(
+            f"      Exitting Animation::begin(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
     def finish(self) -> None:
         # TODO: begin and finish should require a scene as parameter.
@@ -214,9 +225,21 @@ class Animation:
         This method gets called when the animation is over.
 
         """
+        import os, inspect
+
+        print(
+            f"      Entering Animation::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
         self.interpolate(1)
+        print(
+            f"      Value:Self::suspend_mobject_updating: {self.suspend_mobject_updating} && {self.mobject is not None} => {type(self.mobject)} ({hex(id(self.mobject))})"
+        )
         if self.suspend_mobject_updating and self.mobject is not None:
+            print("Sub Mobjects: ", len(self.mobject.submobjects))
             self.mobject.resume_updating()
+        print(
+            f"      Exitting Animation::finish(): Caller [{os.path.basename(inspect.currentframe().f_back.f_code.co_filename)}:{inspect.currentframe().f_back.f_lineno}] Callee [{os.path.basename(__file__)}:{inspect.currentframe().f_lineno}]"
+        )
 
     def clean_up_from_scene(self, scene: Scene) -> None:
         """Clean up the :class:`~.Scene` after finishing the animation.
@@ -479,52 +502,6 @@ class Animation:
             ``True`` if the animation is an introducer, ``False`` otherwise.
         """
         return self.introducer
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs) -> None:
-        super().__init_subclass__(**kwargs)
-
-        cls._original__init__ = cls.__init__
-
-    @classmethod
-    def set_default(cls, **kwargs) -> None:
-        """Sets the default values of keyword arguments.
-
-        If this method is called without any additional keyword
-        arguments, the original default values of the initialization
-        method of this class are restored.
-
-        Parameters
-        ----------
-
-        kwargs
-            Passing any keyword argument will update the default
-            values of the keyword arguments of the initialization
-            function of this class.
-
-        Examples
-        --------
-
-        .. manim:: ChangeDefaultAnimation
-
-            class ChangeDefaultAnimation(Scene):
-                def construct(self):
-                    Rotate.set_default(run_time=2, rate_func=rate_functions.linear)
-                    Indicate.set_default(color=None)
-
-                    S = Square(color=BLUE, fill_color=BLUE, fill_opacity=0.25)
-                    self.add(S)
-                    self.play(Rotate(S, PI))
-                    self.play(Indicate(S))
-
-                    Rotate.set_default()
-                    Indicate.set_default()
-
-        """
-        if kwargs:
-            cls.__init__ = partialmethod(cls.__init__, **kwargs)
-        else:
-            cls.__init__ = cls._original__init__
 
 
 def prepare_animation(

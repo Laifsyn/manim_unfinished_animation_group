@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import logging
 import re
 
 from cloup import Choice, option, option_group
 
-__all__ = ["global_options"]
+from ... import logger
 
-logger = logging.getLogger("manim")
+__all__ = ["global_options"]
 
 
 def validate_gui_location(ctx, param, value):

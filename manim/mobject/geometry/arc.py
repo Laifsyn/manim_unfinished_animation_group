@@ -246,8 +246,7 @@ class TipableVMobject(VMobject, metaclass=ConvertToOpenGL):
 
     def get_tip(self):
         """Returns the TipableVMobject instance's (first) tip,
-        otherwise throws an exception.
-        """
+        otherwise throws an exception."""
         tips = self.get_tips()
         if len(tips) == 0:
             raise Exception("tip not found")
@@ -401,9 +400,7 @@ class Arc(TipableVMobject):
             return line_intersection(line1=(a1, a1 + n1), line2=(a2, a2 + n2))
         except Exception:
             if warning:
-                warnings.warn(
-                    "Can't find Arc center, using ORIGIN instead", stacklevel=1
-                )
+                warnings.warn("Can't find Arc center, using ORIGIN instead")
             self._failed_to_get_center = True
             return np.array(ORIGIN)
 
@@ -572,6 +569,7 @@ class Circle(Arc):
                     group = Group(group1, group2, group3).arrange(buff=1)
                     self.add(group)
         """
+
         # Ignores dim_to_match and stretch; result will always be a circle
         # TODO: Perhaps create an ellipse class to handle single-dimension stretching
 
@@ -611,6 +609,7 @@ class Circle(Arc):
                     self.add(circle, s1, s2)
 
         """
+
         start_angle = angle_of_vector(self.points[0] - self.get_center())
         proportion = (angle - start_angle) / TAU
         proportion -= np.floor(proportion)
@@ -896,15 +895,17 @@ class Sector(AnnularSector):
 
         class ExampleSector(Scene):
             def construct(self):
-                sector = Sector(radius=2)
-                sector2 = Sector(radius=2.5, angle=60*DEGREES).move_to([-3, 0, 0])
+                sector = Sector(outer_radius=2, inner_radius=1)
+                sector2 = Sector(outer_radius=2.5, inner_radius=0.8).move_to([-3, 0, 0])
                 sector.set_color(RED)
                 sector2.set_color(PINK)
                 self.add(sector, sector2)
     """
 
-    def __init__(self, radius: float = 1, **kwargs) -> None:
-        super().__init__(inner_radius=0, outer_radius=radius, **kwargs)
+    def __init__(
+        self, outer_radius: float = 1, inner_radius: float = 0, **kwargs
+    ) -> None:
+        super().__init__(inner_radius=inner_radius, outer_radius=outer_radius, **kwargs)
 
 
 class Annulus(Circle):

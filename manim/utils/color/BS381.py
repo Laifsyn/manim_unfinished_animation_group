@@ -25,8 +25,6 @@ in the standard:
 
 """
 
-from __future__ import annotations
-
 from .core import ManimColor
 
 BS381_101 = ManimColor("#94BFAC")
